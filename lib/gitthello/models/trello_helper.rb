@@ -127,13 +127,15 @@ module Gitthello
     end
 
     def create_card_in_list(name, desc, url, list_id, is_pull_request = false, labels)
-      Trello::Card.
-        create(:name => truncate_text(name), :list_id => list_id,
+      Trello::Card.create(:name => truncate_text(name), :list_id => list_id,
                :desc => truncate_text(desc)).tap do |card|
         card.add_attachment(url, "github")
         card.add_label("purple") if is_pull_request
         labels.each do |label|
-        	card.add_label(label)
+        	lbl = board.labels.select { |l| l.name == label }.first
+        	next if lbl.nil?
+        	
+        	card.add_label(lbl)
         end
       end
     end
