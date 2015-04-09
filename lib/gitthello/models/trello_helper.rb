@@ -29,8 +29,6 @@ module Gitthello
       @github_urls = all_github_urls
       puts "Found #{@github_urls.count} github urls"
       
-      @all_labels = @board.labels
-      puts "Found #{@all_labels.count} labels"
       self
     end
 
