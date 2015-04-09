@@ -16,6 +16,7 @@ module Gitthello
       puts "==> Handling Board: #{@config.name}"
       @trello_helper.setup
       @trello_helper.close_issues(@github_helper)
+      @trello_helper.move_test_issues(@github_helper)
       @trello_helper.move_cards_with_closed_issue(@github_helper)
       @github_helper.retrieve_issues
       @github_helper.new_issues_to_trello(@trello_helper)

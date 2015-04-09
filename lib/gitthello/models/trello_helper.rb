@@ -1,6 +1,6 @@
 module Gitthello
   class TrelloHelper
-    attr_reader :list_todo, :list_backlog, :list_done, :github_urls, :board
+    attr_reader :list_todo, :list_backlog, :list_done, :list_test, :github_urls, :board
 
     # https://trello.com/docs/api/card/#put-1-cards-card-id-or-shortlink
     MAX_TEXT_LENGTH=16384
@@ -25,6 +25,9 @@ module Gitthello
 
       @list_done    = @board.lists.select { |a| a.name == 'Done' }.first
       raise "Missing trello Done list" if list_done.nil?
+
+      @list_test    = @board.lists.select { |a| a.name == 'Test' }.first
+      raise "Missing trello Test list" if list_test.nil?
 
       @github_urls = all_github_urls
       puts "Found #{@github_urls.count} github urls"
@@ -55,6 +58,10 @@ module Gitthello
       create_card_in_list(name, desc, issue_url, list_backlog.id, labels)
     end
 
+    def create_test_card(name, desc, issue_url, labels)
+      create_card_in_list(name, desc, issue_url, list_test.id, labels)
+    end
+
     #
     # Close github issues that have been moved to the done list but only
     # if the ticket has been reopened, i.e. updated_at timestamp is
@@ -80,6 +87,17 @@ module Gitthello
         end
       end
     end
+    
+    def move_test_issues(github_helper)
+      list_test.cards.each do |card|
+        github_details = obtain_github_details(card)
+        next if github_details.nil?
+
+        user,repo,_,number = github_details.url.split(/\//)[3..-1]
+        issue = github_helper.get_issue(user,repo,number)
+        github_helper.move_to_test_issue(user,repo,number)
+      end
+    end
 
     def move_cards_with_closed_issue(github_helper)
       board.lists.each do |list|
@@ -96,6 +114,7 @@ module Gitthello
         end
       end
     end
+
 
     def new_cards_to_github(github_helper)
       all_cards_not_at_github.each do |card|
@@ -133,7 +152,7 @@ module Gitthello
         card.add_label("purple") if is_pull_request
         labels.each do |label|
         	board_labels = board.labels false
-        	lbl = board_labels.select { |l| name == label }.first
+        	lbl = board_labels.select { |l| l.name == label }.first
         	next if lbl.nil?
         	
         	card.add_label(lbl)

@@ -1,6 +1,6 @@
 module Gitthello
   class GithubHelper
-    attr_reader :issue_bucket, :backlog_bucket
+    attr_reader :issue_bucket, :backlog_bucket, :test_bucket
 
     def initialize(oauth_token, repo_for_new_cards, repos_to_consider)
       @github            = Github.new(:oauth_token => oauth_token)
@@ -21,6 +21,15 @@ module Gitthello
       @github.issues.edit(user, repo, number.to_i, :state => "closed")
     end
 
+    def move_to_test_issue(user, repo, number)
+      issue = get_issue(user, repo, number)
+      if !issue["labels"].any? { |a| a["name"] == "test" } 
+      	labels = issue["labels"]
+      	labels.push("test")
+      	@github.issues.edit(user, repo, number.to_i, :labels => labels)
+      end
+    end
+    
     def get_issue(user, repo, number)
       return if number.to_i == 0
       @github.issues.get(user, repo, number.to_i)
@@ -41,7 +50,7 @@ module Gitthello
     end
 
     def retrieve_issues
-      @issue_bucket, @backlog_bucket = [], []
+      @issue_bucket, @backlog_bucket, @test_bucket = [], [], []
 
       @repos_to_consider.split(/,/).map { |a| a.split(/\//)}.
         each do |repo_owner,repo_name|
@@ -53,7 +62,9 @@ module Gitthello
             sort_by { |a| a.number.to_i }
         end.each do |issue|
           (if issue["labels"].any? { |a| a["name"] == "backlog" }
-             @backlog_bucket
+             @backlog_bucket 
+           elsif issue["labels"].any? { |a| a["name"] == "test" }
+           	 @test_bucket
            else
              @issue_bucket
            end) << [repo_name,issue]
@@ -62,6 +73,7 @@ module Gitthello
 
       puts "Found #{@issue_bucket.count} todos"
       puts "Found #{@backlog_bucket.count} backlog"
+      puts "Found #{@test_bucket.count} tests"
     end
 
     def new_issues_to_trello(trello_helper)
@@ -81,6 +93,16 @@ module Gitthello
         prefix = repo_name.sub(/^mops./,'').capitalize
         card = trello_helper.
           create_backlog_card("%s: %s" % [prefix,issue["title"]],
+                              issue["body"], issue["html_url"], 
+                              issue["labels"].map { |i| i.name})
+        add_trello_url(issue, card.url)
+      end
+
+      test_bucket.each do |repo_name, issue|
+        next if trello_helper.has_card?(issue)
+        prefix = repo_name.sub(/^mops./,'').capitalize
+        card = trello_helper.
+          create_test_card("%s: %s" % [prefix,issue["title"]],
                               issue["body"], issue["html_url"], 
                               issue["labels"].map { |i| i.name})
         add_trello_url(issue, card.url)
