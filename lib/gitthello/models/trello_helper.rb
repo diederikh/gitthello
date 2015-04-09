@@ -28,6 +28,9 @@ module Gitthello
 
       @github_urls = all_github_urls
       puts "Found #{@github_urls.count} github urls"
+      
+      @all_labels = @board.labels
+      puts "Found #{@all_labels.count} labels"
       self
     end
 
@@ -46,12 +49,12 @@ module Gitthello
       @github_urls.include?(issue["html_url"])
     end
 
-    def create_todo_card(name, desc, issue_url, is_pull_request)
-      create_card_in_list(name, desc, issue_url, list_todo.id, is_pull_request)
+    def create_todo_card(name, desc, issue_url, is_pull_request, labels)
+      create_card_in_list(name, desc, issue_url, list_todo.id, is_pull_request, labels)
     end
 
-    def create_backlog_card(name, desc, issue_url)
-      create_card_in_list(name, desc, issue_url, list_backlog.id)
+    def create_backlog_card(name, desc, issue_url, labels)
+      create_card_in_list(name, desc, issue_url, list_backlog.id, labels)
     end
 
     #
@@ -125,12 +128,15 @@ module Gitthello
       Trello::Board.all.select { |b| b.name == @board_name }.first
     end
 
-    def create_card_in_list(name, desc, url, list_id, is_pull_request = false)
+    def create_card_in_list(name, desc, url, list_id, is_pull_request = false, labels)
       Trello::Card.
         create(:name => truncate_text(name), :list_id => list_id,
                :desc => truncate_text(desc)).tap do |card|
         card.add_attachment(url, "github")
         card.add_label("purple") if is_pull_request
+        labels.each do |label|
+        	card.add_label(label)
+        end
       end
     end
 
