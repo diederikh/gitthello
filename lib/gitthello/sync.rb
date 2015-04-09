@@ -7,7 +7,6 @@ module Gitthello
     end
 
     def synchronize
-      puts "==> Starting Sync"
       @boards.map(&:synchronize)
     end
 
