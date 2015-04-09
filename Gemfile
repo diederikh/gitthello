@@ -5,7 +5,7 @@ ruby '1.9.3'
 gem 'rake'
 
 gem 'github_api'
-gem 'ruby-trello', '~> 1.1.0'
+gem 'ruby-trello', '~> 1.2.1'
 gem 'unicorn'
 gem 'dotenv', :git => 'https://github.com/gorenje/dotenv.git', :branch => 'squaure_brackets'
 
