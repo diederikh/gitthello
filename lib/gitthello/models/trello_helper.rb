@@ -132,10 +132,10 @@ module Gitthello
         card.add_attachment(url, "github")
         card.add_label("purple") if is_pull_request
         labels.each do |label|
-        	lbl = @board.labels(false).select { |l| l.name == label }.first
+        	lbl = @board.labels.target.select { |key, value| value == label }.first
         	next if lbl.nil?
         	
-        	card.add_label(lbl)
+        	card.add_label(lbl.key)
         end
       end
     end
